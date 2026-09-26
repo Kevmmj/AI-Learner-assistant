@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRO 수행평가 스마트 매니저 (Gemini AI 연동)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Marked.js (마크다운 리포트 변환기) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    .prose h3 { font-size: 1.05rem; font-weight: 700; color: #f8fafc; margin-top: 1.2rem; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem; border-bottom: 1px solid #334155; padding-bottom: 0.4rem; }
+    .prose ul { list-style-type: disc; padding-left: 1.2rem; margin-bottom: 0.8rem; }
+    .prose li { margin-bottom: 0.4rem; font-size: 0.875rem; color: #cbd5e1; line-height: 1.6; }
+    .prose p { font-size: 0.875rem; color: #cbd5e1; line-height: 1.6; margin-bottom: 0.6rem; }
+    .prose strong { color: #818cf8; font-weight: 700; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased p-4 md:p-8">
+
+  <!-- 헤더 -->
+  <header class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 pb-6 border-b border-slate-800">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-indigo-500/30">
+        <i class="fa-solid fa-brain"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-black bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">PRO 수행평가 매니저</h1>
+          <span class="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-bold px-2 py-0.5 rounded-full">Gemini AI 탑재</span>
+        </div>
+        <p class="text-xs text-slate-400 mt-0.5">Google Gemini 1.5 Flash 기반 실시간 초밀착 수행평가 컨설팅</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-2">
+      <button onclick="openApiKeyModal()" class="text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 px-3.5 py-2 rounded-xl flex items-center gap-2 transition text-slate-300">
+        <i class="fa-solid fa-key text-amber-400"></i> API 키 설정
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+    
+    <!-- 입력 폼 -->
+    <section class="lg:col-span-5 space-y-6">
+      <div class="bg-slate-900/90 backdrop-blur-md rounded-3xl p-6 border border-slate-800 shadow-2xl">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2 mb-5">
+          <i class="fa-solid fa-sliders text-indigo-400"></i> 수행평가 정보 입력
+        </h2>
+
+        <form id="evalForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
+          
+          <!-- 1. 수행평가 유형 선택 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-2">1. 수행평가 유형 선택</label>
+            <div class="grid grid-cols-3 gap-2" id="typeContainer">
+              <button type="button" onclick="selectType('실험')" class="type-btn p-3 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-emerald-500/50 text-center transition group flex flex-col items-center gap-1.5" data-type="실험">
+                <i class="fa-solid fa-flask text-emerald-400 text-lg group-hover:scale-110 transition"></i>
+                <span class="text-xs font-semibold text-slate-400">실험/탐구</span>
+              </button>
+              <button type="button" onclick="selectType('글쓰기')" class="type-btn p-3 rounded-xl border border-indigo-500 bg-indigo-900/30 text-center transition group flex flex-col items-center gap-1.5 shadow-lg shadow-indigo-500/20" data-type="글쓰기">
+                <i class="fa-solid fa-pen-nib text-indigo-400 text-lg group-hover:scale-110 transition"></i>
+                <span class="text-xs font-bold text-white">글쓰기/논술</span>
+              </button>
+              <button type="button" onclick="selectType('발표')" class="type-btn p-3 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-purple-500/50 text-center transition group flex flex-col items-center gap-1.5" data-type="발표">
+                <i class="fa-solid fa-display text-purple-400 text-lg group-hover:scale-110 transition"></i>
+                <span class="text-xs font-semibold text-slate-400">발표/PPT</span>
+              </button>
+              <button type="button" onclick="selectType('조별')" class="type-btn p-3 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-amber-500/50 text-center transition group flex flex-col items-center gap-1.5" data-type="조별">
+                <i class="fa-solid fa-users text-amber-400 text-lg group-hover:scale-110 transition"></i>
+                <span class="text-xs font-semibold text-slate-400">조별과제</span>
+              </button>
+              <button type="button" onclick="selectType('실기')" class="type-btn p-3 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-rose-500/50 text-center transition group flex flex-col items-center gap-1.5" data-type="실기">
+                <i class="fa-solid fa-palette text-rose-400 text-lg group-hover:scale-110 transition"></i>
+                <span class="text-xs font-semibold text-slate-400">실기/제작</span>
+              </button>
+              <button type="button" onclick="selectType('기타')" class="type-btn p-3 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-sky-500/50 text-center transition group flex flex-col items-center gap-1.5" data-type="기타">
+                <i class="fa-solid fa-file-lines text-sky-400 text-lg group-hover:scale-110 transition"></i>
+                <span class="text-xs font-semibold text-slate-400">기타/서술형</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. 과목명 & 마감일 -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">과목명</label>
+              <input type="text" id="subjectInput" placeholder="예: 공통영어 / 과학탐구" required
+                class="w-full text-xs px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 mb-1">마감 일자</label>
+              <input type="date" id="deadlineInput" required
+                class="w-full text-xs px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition">
+            </div>
+          </div>
+
+          <!-- 3. 제목/주제 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">수행평가 제목/주제</label>
+            <input type="text" id="titleInput" placeholder="예: 기후 변화 대응을 위한 근거 기반 보고서" required
+              class="w-full text-xs px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition">
+          </div>
+
+          <!-- 4. 유인물 첨부 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">안내 유인물 텍스트(.txt) 첨부 (선택)</label>
+            <div class="relative border border-dashed border-slate-800 hover:border-indigo-500/50 rounded-xl p-3 text-center bg-slate-950/50 cursor-pointer transition" onclick="document.getElementById('fileInput').click()">
+              <input type="file" id="fileInput" accept=".txt" class="hidden" onchange="handleFileSelect(event)">
+              <i class="fa-solid fa-file-arrow-up text-indigo-400 text-lg mb-1"></i>
+              <p class="text-xs text-slate-400">텍스트 유인물 파일을 올리면 내용이 자동 합성됩니다.</p>
+              <p id="fileNameDisplay" class="text-xs font-bold text-indigo-400 mt-2 hidden"></p>
+            </div>
+          </div>
+
+          <!-- 5. 선생님 지시사항 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">선생님 지시사항 / 채점 기준</label>
+            <textarea id="contentInput" rows="3" placeholder="지시된 분량, 필수 포함 키워드 등을 적어주세요."
+              class="w-full text-xs p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+          </div>
+
+          <!-- 6. 초안/아이디어 -->
+          <div>
+            <label class="block text-xs font-bold text-slate-300 mb-1">내 작성 초안 및 아이디어 (선택)</label>
+            <textarea id="draftInput" rows="3" placeholder="구상 중인 내용이 있다면 붙여넣어 주세요."
+              class="w-full text-xs p-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+          </div>
+
+          <button type="submit" id="submitBtn"
+            class="w-full py-3.5 bg-gradient-to-r from-indigo-600 via-indigo-500 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center justify-center gap-2">
+            <i class="fa-solid fa-sparkles"></i> Gemini AI 분석 리포트 생성
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- 분석 결과 영역 -->
+    <section class="lg:col-span-7 space-y-6">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-center">
+          <div class="text-xs text-slate-400 font-medium mb-1">전체 과제</div>
+          <div id="statTotal" class="text-2xl font-black text-white">0</div>
+        </div>
+        <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-center">
+          <div class="text-xs text-amber-400 font-medium mb-1">진행 중</div>
+          <div id="statPending" class="text-2xl font-black text-amber-400">0</div>
+        </div>
+        <div class="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-center">
+          <div class="text-xs text-emerald-400 font-medium mb-1">완료됨</div>
+          <div id="statDone" class="text-2xl font-black text-emerald-400">0</div>
+        </div>
+      </div>
+
+      <div class="space-y-4" id="taskList"></div>
+    </section>
+  </main>
+
+  <!-- API 키 모달 -->
+  <div id="apiKeyModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+    <div class="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl">
+      <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+        <i class="fa-solid fa-key text-amber-400"></i> Google Gemini API 키 설정
+      </h3>
+      <p class="text-xs text-slate-400 mb-4">
+        Google AI Studio에서 발급받은 무료 API 키를 입력하세요. 입력한 키는 브라우저 내부(`localStorage`)에만 안전하게 저장됩니다.
+      </p>
+      <input type="password" id="modalApiKeyInput" placeholder="AIzaSy..." 
+        class="w-full text-xs px-3.5 py-3 bg-slate-950 border border-slate-800 rounded-xl text-white focus:outline-none focus:border-indigo-500 mb-4">
+      <div class="flex justify-end gap-2">
+        <button onclick="closeApiKeyModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">취소</button>
+        <button onclick="saveApiKey()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedType = '글쓰기';
+    let tasks = JSON.parse(localStorage.getItem('gemini_eval_tasks')) || [];
+    let attachedFileName = '';
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 5);
+      document.getElementById('deadlineInput').value = defaultDate.toISOString().substring(0, 10);
+      renderTasks();
+    });
+
+    function selectType(type) {
+      selectedType = type;
+      document.querySelectorAll('.type-btn').forEach(btn => {
+        if (btn.getAttribute('data-type') === type) {
+          btn.className = "type-btn p-3 rounded-xl border border-indigo-500 bg-indigo-900/40 text-center transition group flex flex-col items-center gap-1.5 shadow-lg shadow-indigo-500/20";
+          btn.querySelector('span').className = "text-xs font-bold text-white";
+        } else {
+          btn.className = "type-btn p-3 rounded-xl border border-slate-800 bg-slate-950/60 hover:border-slate-700 text-center transition group flex flex-col items-center gap-1.5";
+          btn.querySelector('span').className = "text-xs font-semibold text-slate-400";
+        }
+      });
+    }
+
+    function openApiKeyModal() {
+      const key = localStorage.getItem('gemini_api_key') || '';
+      document.getElementById('modalApiKeyInput').value = key;
+      document.getElementById('apiKeyModal').classList.remove('hidden');
+    }
+
+    function closeApiKeyModal() {
+      document.getElementById('apiKeyModal').classList.add('hidden');
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('modalApiKeyInput').value.trim();
+      if (!key) {
+        alert('API 키를 입력해 주세요.');
+        return;
+      }
+      localStorage.setItem('gemini_api_key', key);
+      closeApiKeyModal();
+      alert('API 키가 저장되었습니다.');
+    }
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      attachedFileName = file.name;
+      const display = document.getElementById('fileNameDisplay');
+      display.innerText = `📎 첨부됨: ${file.name}`;
+      display.classList.remove('hidden');
+
+      if (file.name.endsWith('.txt')) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const currentVal = document.getElementById('contentInput').value;
+          document.getElementById('contentInput').value = (currentVal ? currentVal + "\n\n" : "") + "[첨부 파일 내용]\n" + e.target.result;
+        };
+        reader.readAsText(file);
+      }
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const apiKey = localStorage.getItem('gemini_api_key');
+      if (!apiKey) {
+        alert('API 키가 설정되지 않았습니다. 우측 상단의 [API 키 설정] 버튼을 눌러 먼저 등록해 주세요.');
+        openApiKeyModal();
+        return;
+      }
+
+      const subject = document.getElementById('subjectInput').value;
+      const deadline = document.getElementById('deadlineInput').value;
+      const title = document.getElementById('titleInput').value;
+      const content = document.getElementById('contentInput').value;
+      const draft = document.getElementById('draftInput').value;
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Gemini AI가 분석 중입니다...`;
+
+      try {
+        const promptText = `
+당신은 고등학교 및 중학교 수행평가 전문 컨설턴트 교사입니다.
+다음 전달된 수행평가 정보 및 초안을 바탕으로 학생이 만점을 받을 수 있도록 구체적이고 정교한 분석 리포트를 마크다운(Markdown) 형식으로 작성해 주세요.
+
+[과제 정보]
+- 과목: ${subject}
+- 수행평가 유형: ${selectedType}
+- 주제/제목: ${title}
+- 마감일자: ${deadline}
+- 선생님 지시사항 및 채점기준: ${content || '별도 지시사항 없음'}
+- 학생 초안/아이디어: ${draft || '작성된 초안 없음'}
+
+[리포트 포함 작성 목차]
+1. ### 🎯 감점 방지 핵심 채점 포인트 (TOP 3)
+2. ### 📅 D-Day 맞춤 단계별 작성 스케줄 (마감일까지 남아있는 일수 기준 계산)
+3. ### 💡 유형별(${selectedType}) 맞춤 심화 가이드라인 및 목차 구조
+4. ### ❓ 예상 질문(Q&A) 및 심층 면접 대비 (발표/서술형/보고서 관점)
+5. ### ✏️ 작성 초안 피드백 및 보완 가이드 (초안이 있는 경우에만 상세 피드백)
+        `;
+
+        // Gemini REST API 호출
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }]
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error?.message || 'API 호출 중 오류가 발생했습니다.');
+        }
+
+        const aiResponseText = data.candidates[0].content.parts[0].text;
+
+        const newTask = {
+          id: Date.now(),
+          type: selectedType,
+          subject,
+          title,
+          deadline,
+          content,
+          draft,
+          fileName: attachedFileName,
+          aiResult: aiResponseText,
+          completed: false
+        };
+
+        tasks.unshift(newTask);
+        saveTasks();
+
+        document.getElementById('evalForm').reset();
+        document.getElementById('fileNameDisplay').classList.add('hidden');
+        attachedFileName = '';
+        selectType('글쓰기');
+
+      } catch (err) {
+        alert('AI 분석 실패: ' + err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fa-solid fa-sparkles"></i> Gemini AI 분석 리포트 생성`;
+      }
+    }
+
+    function saveTasks() {
+      localStorage.setItem('gemini_eval_tasks', JSON.stringify(tasks));
+      renderTasks();
+    }
+
+    function renderTasks() {
+      const taskList = document.getElementById('taskList');
+      taskList.innerHTML = '';
+
+      let doneCount = 0, pendingCount = 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (tasks.length === 0) {
+        taskList.innerHTML = `
+          <div class="bg-slate-900/40 rounded-3xl border border-slate-800 p-12 text-center text-slate-500">
+            <i class="fa-solid fa-folder-open text-4xl mb-3 text-slate-600"></i>
+            <p class="text-xs">등록된 수행평가 리포트가 없습니다. 왼쪽에서 새 과제를 입력해 보세요.</p>
+          </div>`;
+      }
+
+      tasks.forEach(task => {
+        if (task.completed) doneCount++;
+        else pendingCount++;
+
+        const deadline = new Date(task.deadline);
+        deadline.setHours(0, 0, 0, 0);
+        const diffDays = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+
+        let dDayBadge = '';
+        if (task.completed) {
+          dDayBadge = `<span class="bg-slate-800 text-slate-400 text-xs px-2.5 py-1 rounded-lg font-bold">완료됨</span>`;
+        } else if (diffDays <= 2 && diffDays >= 0) {
+          dDayBadge = `<span class="bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs px-2.5 py-1 rounded-lg font-bold animate-pulse">D-${diffDays} (임박)</span>`;
+        } else if (diffDays < 0) {
+          dDayBadge = `<span class="bg-slate-800 text-slate-500 text-xs px-2.5 py-1 rounded-lg font-bold">마감됨</span>`;
+        } else {
+          dDayBadge = `<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs px-2.5 py-1 rounded-lg font-bold">D-${diffDays}</span>`;
+        }
+
+        const htmlReport = marked.parse(task.aiResult);
+
+        const card = document.createElement('div');
+        card.className = `bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl transition ${task.completed ? 'opacity-60' : ''}`;
+        card.innerHTML = `
+          <div class="flex justify-between items-start gap-3 mb-3 border-b border-slate-800 pb-3">
+            <div>
+              <div class="flex items-center gap-2 mb-1 flex-wrap">
+                <span class="text-[11px] border border-indigo-500/30 bg-indigo-500/20 text-indigo-300 font-bold px-2 py-0.5 rounded-md">${task.type}</span>
+                <span class="text-xs text-slate-400 font-semibold">${task.subject}</span>
+              </div>
+              <h3 class="text-base font-bold text-white ${task.completed ? 'line-through text-slate-500' : ''}">${task.title}</h3>
+            </div>
+            ${dDayBadge}
+          </div>
+
+          <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 my-3 text-slate-200 prose prose-invert max-w-none max-h-[480px] overflow-y-auto">
+            ${htmlReport}
+          </div>
+
+          <div class="flex justify-between items-center text-xs text-slate-400 pt-2">
+            <span>마감일: <strong class="text-slate-300">${task.deadline}</strong></span>
+            <div class="flex items-center gap-3">
+              <button onclick="toggleComplete(${task.id})" class="text-xs ${task.completed ? 'text-slate-400' : 'text-emerald-400 font-bold'} hover:underline">
+                ${task.completed ? '진행중으로 전환' : '<i class="fa-solid fa-check"></i> 완료 처리'}
+              </button>
+              <button onclick="deleteTask(${task.id})" class="text-xs text-rose-400 hover:underline">
+                <i class="fa-solid fa-trash"></i> 삭제
+              </button>
+            </div>
+          </div>
+        `;
+        taskList.appendChild(card);
+      });
+
+      document.getElementById('statTotal').innerText = tasks.length;
+      document.getElementById('statPending').innerText = pendingCount;
+      document.getElementById('statDone').innerText = doneCount;
+    }
+
+    function toggleComplete(id) {
+      tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+      saveTasks();
+    }
+
+    function deleteTask(id) {
+      if (confirm('이 리포트를 삭제하시겠습니까?')) {
+        tasks = tasks.filter(t => t.id !== id);
+        saveTasks();
+      }
+    }
+  </script>
+</body>
+</html>
